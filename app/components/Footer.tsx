@@ -1,4 +1,4 @@
-import { SITE_VERSION_LABEL } from '../../src/lib/version';
+import { SITE_VERSION_LABEL } from '@/src/lib/version';
 
 export default function Footer() {
   return (
