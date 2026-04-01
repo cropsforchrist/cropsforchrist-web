@@ -253,6 +253,27 @@ html, body {
 .tier-text h4 { font-weight: 700; color: var(--cream); margin-bottom: 0.2rem; }
 .tier-text p  { font-size: 0.82rem; font-weight: 300; color: var(--fog); line-height: 1.5; }
 
+/* INTRO ANIMATIONS */
+@keyframes halo {
+  0%,100% { filter: drop-shadow(0 0 10px rgba(240,192,64,0.3)); transform: scale(1); }
+  50%      { filter: drop-shadow(0 0 28px rgba(240,192,64,0.7)); transform: scale(1.06); }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cross { animation: halo 4s ease-in-out infinite; }
+
+.intro-wrap .eyebrow { animation: rise 1s 0.2s both; }
+.intro-wrap .intro-h1 { animation: rise 1s 0.4s both; }
+.intro-wrap .intro-body { animation: rise 1s 0.7s both; }
+.intro-wrap .btn { animation: rise 1s 1s both; }
+
+/* SCENE TRANSITIONS */
+.scene { animation: rise 0.6s ease both; }
+
 /* RESPONSIVE */
 @media (max-width: 680px) {
   .paths { grid-template-columns: 1fr; }
