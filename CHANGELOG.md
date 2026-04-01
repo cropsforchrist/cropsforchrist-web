@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.0] - 2026-04-01
+### Added
+- Top navigation bar
+- Full page.tsx wiring for all scenes
+
 ## [1.2.2] - 2026-04-01
 ### Added
 - Field terrain silhouette in background

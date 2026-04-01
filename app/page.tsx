@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Background from './components/Background';
+import Nav from './components/Nav';
+import Footer from './components/Footer';
 import SceneIntro from './components/SceneIntro';
 import SceneChoose from './components/SceneChoose';
 import SceneDonor from './components/SceneDonor';
@@ -9,8 +12,6 @@ import SceneGiveTime from './components/SceneGiveTime';
 import SceneGiveCash from './components/SceneGiveCash';
 import SceneNeed from './components/SceneNeed';
 import SceneGospel from './components/SceneGospel';
-import Footer from './components/Footer';
-import Background from './components/Background';
 
 type Scene = 'intro' | 'choose' | 'donor' | 'give-produce' | 'give-time' | 'give-cash' | 'need' | 'gospel';
 
@@ -20,6 +21,12 @@ export default function Home() {
   return (
     <main>
       <Background />
+      {scene !== 'intro' && (
+        <Nav
+          onHome={() => setScene('choose')}
+          onBack={() => setScene('choose')}
+        />
+      )}
       {scene === 'intro' && (
         <SceneIntro onNext={() => setScene('choose')} />
       )}
@@ -71,7 +78,6 @@ export default function Home() {
         />
       )}
       <Footer />
-
     </main>
   );
 }
