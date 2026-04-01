@@ -56,13 +56,21 @@ export default function Background() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 0,
-        pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 120% 80% at 50% 110%, #1a0c03 0%, #0a0602 70%)',
-      }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 0,
+          pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 120% 80% at 50% 110%, #1a0c03 0%, #0a0602 70%)',
+        }}
+      />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '-5%', right: '-5%',
+        height: '30vh', zIndex: 1, pointerEvents: 'none',
+        background: 'linear-gradient(to top, #0a0602 0%, #1a0c03 40%, transparent 100%)',
+        clipPath: 'polygon(0 60%, 8% 40%, 18% 55%, 28% 38%, 40% 52%, 52% 35%, 62% 50%, 74% 33%, 85% 48%, 95% 30%, 100% 45%, 100% 100%, 0 100%)',
+      }} />
+    </>
   );
 }
