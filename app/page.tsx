@@ -9,6 +9,7 @@ import SceneGiveTime from './components/SceneGiveTime';
 import SceneGiveCash from './components/SceneGiveCash';
 import SceneNeed from './components/SceneNeed';
 import SceneGospel from './components/SceneGospel';
+import Footer from './components/Footer';
 
 type Scene = 'intro' | 'choose' | 'donor' | 'give-produce' | 'give-time' | 'give-cash' | 'need' | 'gospel';
 
@@ -67,6 +68,8 @@ export default function Home() {
           onBack={() => setScene('choose')}
         />
       )}
+      <Footer />
+
     </main>
   );
 }
