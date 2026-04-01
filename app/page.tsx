@@ -10,6 +10,7 @@ import SceneGiveCash from './components/SceneGiveCash';
 import SceneNeed from './components/SceneNeed';
 import SceneGospel from './components/SceneGospel';
 import Footer from './components/Footer';
+import Background from './components/Background';
 
 type Scene = 'intro' | 'choose' | 'donor' | 'give-produce' | 'give-time' | 'give-cash' | 'need' | 'gospel';
 
@@ -18,6 +19,7 @@ export default function Home() {
 
   return (
     <main>
+      <Background />
       {scene === 'intro' && (
         <SceneIntro onNext={() => setScene('choose')} />
       )}
