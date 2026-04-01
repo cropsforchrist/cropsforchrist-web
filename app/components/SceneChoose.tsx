@@ -11,8 +11,8 @@ export default function SceneChoose({ onDonor, onNeed, onGospel }: Props) {
     <section className="scene">
       <div className="choose-wrap">
         <h2 className="choose-q">What brings you here today?</h2>
-        <p className="choose-hint">Every path leads somewhere beautiful — choose where to begin</p>
-        <div className="paths">
+        <p className="choose-hint">If you need it take it. If you have it give it. If you know someone who needs it, take some more.</p>
+        <p className="choose-sub">Every path leads somewhere beautiful — choose where to begin</p>        <div className="paths">
 
           <div className="path-card donor" onClick={onDonor}>
             <div className="path-icon-wrap">💛</div>

@@ -69,9 +69,13 @@ html, body {
   font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 700; color: var(--cream); margin-bottom: 0.5rem;
 }
 .choose-hint {
-  font-size: 0.85rem; letter-spacing: 0.12em; color: var(--wheat); margin-bottom: 3rem;
+  font-size: 0.85rem; letter-spacing: 0.12em;
+  color: rgba(212,168,67,0.5); margin-bottom: 0.5rem;
 }
-.paths {
+.choose-sub {
+  font-size: 0.95rem; letter-spacing: 0.1em;
+  color: var(--wheat); margin-bottom: 3rem;
+}.paths {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
 }
 .path-card {
