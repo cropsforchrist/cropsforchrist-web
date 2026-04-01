@@ -4,10 +4,13 @@ import { useState } from 'react';
 import SceneIntro from './components/SceneIntro';
 import SceneChoose from './components/SceneChoose';
 import SceneDonor from './components/SceneDonor';
+import SceneGiveProduce from './components/SceneGiveProduce';
+import SceneGiveTime from './components/SceneGiveTime';
+import SceneGiveCash from './components/SceneGiveCash';
 import SceneNeed from './components/SceneNeed';
 import SceneGospel from './components/SceneGospel';
 
-type Scene = 'intro' | 'choose' | 'donor' | 'need' | 'gospel';
+type Scene = 'intro' | 'choose' | 'donor' | 'give-produce' | 'give-time' | 'give-cash' | 'need' | 'gospel';
 
 export default function Home() {
   const [scene, setScene] = useState<Scene>('intro');
@@ -26,11 +29,29 @@ export default function Home() {
       )}
       {scene === 'donor' && (
         <SceneDonor
-          onProduce={() => setScene('donor')}
-          onTime={() => setScene('donor')}
-          onCash={() => setScene('donor')}
+          onProduce={() => setScene('give-produce')}
+          onTime={() => setScene('give-time')}
+          onCash={() => setScene('give-cash')}
           onGospel={() => setScene('gospel')}
           onBack={() => setScene('choose')}
+        />
+      )}
+      {scene === 'give-produce' && (
+        <SceneGiveProduce
+          onGospel={() => setScene('gospel')}
+          onBack={() => setScene('donor')}
+        />
+      )}
+      {scene === 'give-time' && (
+        <SceneGiveTime
+          onGospel={() => setScene('gospel')}
+          onBack={() => setScene('donor')}
+        />
+      )}
+      {scene === 'give-cash' && (
+        <SceneGiveCash
+          onGospel={() => setScene('gospel')}
+          onBack={() => setScene('donor')}
         />
       )}
       {scene === 'need' && (
