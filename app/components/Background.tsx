@@ -21,6 +21,35 @@ function getTimeOfDay(): TimeOfDay {
   return h >= 6 && h < 20 ? 'day' : 'night';
 }
 
+function getEaster(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m2 = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m2 + 114) / 31);
+  const day = ((h + l - 7 * m2 + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+function isEasterWeekend(): boolean {
+  const now = new Date();
+  const easter = getEaster(now.getFullYear());
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const gf = new Date(goodFriday.getFullYear(), goodFriday.getMonth(), goodFriday.getDate());
+  const es = new Date(easter.getFullYear(), easter.getMonth(), easter.getDate());
+  return today >= gf && today <= es;
+}
+
 const SEASON_COLORS = {
   spring: {
     day:   { sky1: '#87CEEB', sky2: '#c8f0a0' },
@@ -77,17 +106,38 @@ type Particle = {
   wobble: number; wobbleSpeed: number; rotation: number;
 };
 
+type EasterEgg = {
+  x: number; y: number;
+  width: number; height: number;
+  colors: string[];
+  pattern: 'stripes' | 'dots' | 'zigzag';
+  wobble: number; wobbleSpeed: number;
+};
+
 const FIREWORK_COLORS = ['#ff2222', '#22ff22', '#2266ff', '#ffffff', '#ffee00'];
+
+const EGG_COLOR_SETS = [
+  ['#ff6eb4', '#ffef9f', '#ffffff'],
+  ['#a78bfa', '#fcd34d', '#f9a8d4'],
+  ['#34d399', '#60a5fa', '#ffffff'],
+  ['#f87171', '#fbbf24', '#a3e635'],
+  ['#e879f9', '#38bdf8', '#ffffff'],
+  ['#fb923c', '#facc15', '#4ade80'],
+];
 
 export default function Background() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [season, setSeason] = useState<Season>(getSeasonFromDate());
   const [time, setTime] = useState<TimeOfDay>(getTimeOfDay());
+  const [showEggs] = useState<boolean>(isEasterWeekend());
+  const [devEaster, setDevEaster] = useState(false);
 
   const seasonRef = useRef(season);
   const timeRef = useRef(time);
+  const devEasterRef = useRef(devEaster);
   useEffect(() => { seasonRef.current = season; }, [season]);
   useEffect(() => { timeRef.current = time; }, [time]);
+  useEffect(() => { devEasterRef.current = devEaster; }, [devEaster]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -98,7 +148,88 @@ export default function Background() {
     let H = canvas.height = window.innerHeight;
     let animId: number;
 
-    // ── STARS ──
+    function fieldY(x: number): number {
+      const t = x / W;
+      if (t < 0.1)  return H * 0.72 + (H * 0.58 - H * 0.72) * (t / 0.1);
+      if (t < 0.28) return H * 0.58 + (H * 0.62 - H * 0.58) * ((t - 0.1) / 0.18);
+      if (t < 0.44) return H * 0.62 + (H * 0.65 - H * 0.62) * ((t - 0.28) / 0.16);
+      if (t < 0.52) return H * 0.65 + (H * 0.6  - H * 0.65) * ((t - 0.44) / 0.08);
+      if (t < 0.7)  return H * 0.6  + (H * 0.63 - H * 0.6)  * ((t - 0.52) / 0.18);
+      if (t < 0.78) return H * 0.63 + (H * 0.57 - H * 0.63) * ((t - 0.7)  / 0.08);
+      if (t < 0.93) return H * 0.57 + (H * 0.6  - H * 0.57) * ((t - 0.78) / 0.15);
+      return H * 0.6 + (H * 0.65 - H * 0.6) * ((t - 0.93) / 0.07);
+    }
+
+    const eggs: EasterEgg[] = Array.from({ length: 10 }, (_, i) => {
+      const x = (W / 11) * (i + 1) + (Math.random() - 0.5) * 40;
+      const patterns: EasterEgg['pattern'][] = ['stripes', 'dots', 'zigzag'];
+      const h = Math.random() * 16 + 14;
+      const w = h * 0.7;
+      // Sample the bezier field height at this x position
+      const fy = fieldY(x);
+      return {
+        x,
+        y: fy + h * 8.0,
+        width: w, height: h,
+        colors: EGG_COLOR_SETS[Math.floor(Math.random() * EGG_COLOR_SETS.length)],
+        pattern: patterns[Math.floor(Math.random() * patterns.length)],
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: Math.random() * 0.02 + 0.005,
+      };
+    });
+
+    function drawEgg(egg: EasterEgg) {
+      egg.wobble += egg.wobbleSpeed;
+      const wobbleX = Math.sin(egg.wobble) * 1.5;
+
+      ctx.save();
+      ctx.translate(egg.x + wobbleX, egg.y);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, egg.width / 2, egg.height / 2, 0, 0, Math.PI * 2);
+      ctx.fillStyle = egg.colors[0];
+      ctx.fill();
+      ctx.clip();
+
+      if (egg.pattern === 'stripes') {
+        const stripeH = egg.height / 4;
+        [-2, -1, 0, 1, 2].forEach(i => {
+          ctx.fillStyle = i % 2 === 0 ? egg.colors[1] : egg.colors[2];
+          ctx.fillRect(-egg.width, i * stripeH, egg.width * 2, stripeH);
+        });
+      } else if (egg.pattern === 'dots') {
+        for (let dx = -egg.width; dx < egg.width; dx += 7) {
+          for (let dy = -egg.height; dy < egg.height; dy += 7) {
+            ctx.beginPath();
+            ctx.arc(dx, dy, 2, 0, Math.PI * 2);
+            ctx.fillStyle = egg.colors[1];
+            ctx.fill();
+          }
+        }
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-egg.width, -egg.height / 2);
+        for (let x = -egg.width; x < egg.width; x += 6) {
+          ctx.lineTo(x + 3, 0);
+          ctx.lineTo(x + 6, -egg.height / 2);
+        }
+        ctx.lineTo(egg.width, egg.height);
+        ctx.lineTo(-egg.width, egg.height);
+        ctx.closePath();
+        ctx.fillStyle = egg.colors[2];
+        ctx.fill();
+      }
+
+      ctx.restore();
+      ctx.save();
+      ctx.translate(egg.x + wobbleX, egg.y);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, egg.width / 2, egg.height / 2, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
     const stars: Star[] = Array.from({ length: 140 }, () => ({
       x: Math.random() * W, y: Math.random() * H,
       r: Math.random() * 1.4 + 0.3,
@@ -111,7 +242,6 @@ export default function Background() {
       c: Math.random() > 0.7 ? '#D4A843' : Math.random() > 0.5 ? '#aed6f1' : '#ffffff',
     }));
 
-    // ── SHOOTING STAR ──
     const shootingStars: ShootingStar[] = [makeShootingStar(true)];
 
     function makeShootingStar(inactive: boolean): ShootingStar {
@@ -121,13 +251,11 @@ export default function Background() {
         vx: Math.random() * 8 + 4,
         vy: Math.random() * 4 + 2,
         len: Math.random() * 80 + 40,
-        a: 0,
-        active: !inactive,
+        a: 0, active: !inactive,
         timer: Math.random() * 400 + 100,
       };
     }
 
-    // ── FIREWORKS ──
     const fireworks: Firework[] = [];
     let fireworkTimer = Math.random() * 200 + 150;
 
@@ -138,8 +266,7 @@ export default function Background() {
       fireworks.push({
         x, y: H * 0.9, targetY,
         vy: -(Math.abs(H * 0.9 - targetY)) / 35,
-        phase: 'rocket',
-        particles: [],
+        phase: 'rocket', particles: [],
         color, timer: 80,
         trailX: [], trailY: [],
       });
@@ -166,15 +293,12 @@ export default function Background() {
         launchFirework();
         fireworkTimer = Math.random() * 250 + 180;
       }
-
       for (let i = fireworks.length - 1; i >= 0; i--) {
         const fw = fireworks[i];
-
         if (fw.phase === 'rocket') {
           fw.trailX.push(fw.x);
           fw.trailY.push(fw.y);
           if (fw.trailX.length > 12) { fw.trailX.shift(); fw.trailY.shift(); }
-
           fw.trailX.forEach((tx, ti) => {
             const ta = (ti / fw.trailX.length) * 0.8;
             ctx.beginPath();
@@ -183,24 +307,19 @@ export default function Background() {
             ctx.globalAlpha = ta;
             ctx.fill();
           });
-
           ctx.beginPath();
           ctx.arc(fw.x, fw.y, 3, 0, Math.PI * 2);
           ctx.fillStyle = '#ffffff';
           ctx.globalAlpha = 1;
           ctx.fill();
-
           fw.y += fw.vy;
           if (fw.y <= fw.targetY) burstFirework(fw);
-
         } else {
           fw.timer--;
           let allFaded = true;
           fw.particles.forEach(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.07;
-            p.vx *= 0.97;
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.07; p.vx *= 0.97;
             p.a -= 0.018;
             if (p.a > 0) {
               allFaded = false;
@@ -217,7 +336,6 @@ export default function Background() {
       ctx.globalAlpha = 1;
     }
 
-    // ── PARTICLES (fall leaves / winter snow) ──
     const particles: Particle[] = Array.from({ length: 60 }, () => makeParticle('init'));
 
     function shouldShowParticles(): boolean {
@@ -250,7 +368,6 @@ export default function Background() {
       ctx.globalAlpha = p.a;
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rotation);
-
       if (s === 'winter') {
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
@@ -272,7 +389,6 @@ export default function Background() {
       ctx.restore();
     }
 
-    // ── SHOOTING STARS ──
     function drawShootingStars() {
       shootingStars.forEach((ss, i) => {
         ss.timer--;
@@ -281,17 +397,13 @@ export default function Background() {
           return;
         }
         if (!ss.active) return;
-
-        ss.x += ss.vx;
-        ss.y += ss.vy;
+        ss.x += ss.vx; ss.y += ss.vy;
         ss.a = Math.min(ss.a + 0.05, 0.8);
-
         if (ss.x > W || ss.y > H) {
           shootingStars[i] = makeShootingStar(true);
           shootingStars[i].timer = Math.random() * 300 + 150;
           return;
         }
-
         const grad = ctx.createLinearGradient(
           ss.x, ss.y,
           ss.x - ss.len, ss.y - ss.len * (ss.vy / ss.vx)
@@ -307,7 +419,6 @@ export default function Background() {
       });
     }
 
-    // ── MAIN DRAW LOOP ──
     function draw() {
       const s = seasonRef.current;
       const t = timeRef.current;
@@ -315,14 +426,12 @@ export default function Background() {
 
       ctx.clearRect(0, 0, W, H);
 
-      // Sky
       const grad = ctx.createLinearGradient(0, 0, 0, H);
       grad.addColorStop(0, skyColors.sky2);
       grad.addColorStop(1, skyColors.sky1);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
-      // Night elements
       if (t === 'night') {
         stars.forEach(star => {
           star.twinklePhase += star.twinkleSpeed;
@@ -341,7 +450,6 @@ export default function Background() {
         if (s === 'summer') drawFireworks();
       }
 
-      // Day particles
       if (shouldShowParticles()) {
         particles.forEach((p, i) => {
           p.wobble += p.wobbleSpeed;
@@ -356,7 +464,6 @@ export default function Background() {
         ctx.globalAlpha = 1;
       }
 
-      // Field silhouette
       ctx.fillStyle = SEASON_COLORS[s].field;
       ctx.beginPath();
       ctx.moveTo(0, H);
@@ -368,6 +475,10 @@ export default function Background() {
       ctx.lineTo(W, H);
       ctx.closePath();
       ctx.fill();
+
+      if ((showEggs || devEasterRef.current) && s === 'spring' && t === 'day') {
+        eggs.forEach(egg => drawEgg(egg));
+      }
 
       animId = requestAnimationFrame(draw);
     }
@@ -384,14 +495,14 @@ export default function Background() {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [showEggs]);
 
   return (
     <>
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
       <div style={{
         position: 'fixed', bottom: '2.5rem', left: '1rem', zIndex: 1000,
-        display: 'flex', gap: '0.4rem', flexWrap: 'wrap', maxWidth: '220px',
+        display: 'flex', gap: '0.4rem', flexWrap: 'wrap', maxWidth: '280px',
       }}>
         {(['spring','summer','fall','winter'] as Season[]).map(s => (
           <button key={s} onClick={() => setSeason(s)} style={{
@@ -409,6 +520,13 @@ export default function Background() {
           border: '1px solid rgba(255,255,255,0.2)',
           color: 'rgba(255,255,255,0.5)',
         }}>{time === 'day' ? '🌙 Night' : '☀️ Day'}</button>
+        <button onClick={() => setDevEaster(e => !e)} style={{
+          padding: '0.3rem 0.6rem', fontSize: '0.65rem', fontWeight: 700,
+          letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+          background: devEaster ? 'rgba(255,110,180,0.3)' : 'rgba(0,0,0,0.5)',
+          border: devEaster ? '1px solid #ff6eb4' : '1px solid rgba(255,255,255,0.2)',
+          color: devEaster ? '#ff6eb4' : 'rgba(255,255,255,0.5)',
+        }}>🥚 Easter</button>
       </div>
     </>
   );

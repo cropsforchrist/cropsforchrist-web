@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.6] - 2026-04-02
+### Fixed
+- Easter eggs now sit in the grass correctly
+
+## [1.4.5] - 2026-04-02
+### Added
+- Easter eggs on spring day from Good Friday through Easter Sunday
+
 # [1.4.4] - 2026-04-01
 ### Fixed
 - TypeScript ctx null assertion throughout Background.tsx
