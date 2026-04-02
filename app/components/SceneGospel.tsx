@@ -61,7 +61,7 @@ export default function SceneGospel({ onDonor, onNeed, onBack }: Props) {
         </div>
         <div className="actions">
           <a className="btn btn-gold" href="mailto:adam@cropsforchrist.org?subject=I%20want%20to%20know%20more%20about%20faith">Talk to Us →</a>
-          <a className="btn btn-amber" href="tel:8145065846">Call 814-506-5846</a>
+          <a className="btn btn-amber" href="tel:8142644769">Call 814-264-GROW</a>
         </div>
         <div className="hdivider"><span>✝</span></div>
         <div className="actions" style={{ justifyContent: 'center' }}>

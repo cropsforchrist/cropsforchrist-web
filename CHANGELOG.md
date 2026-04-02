@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.7] - 2026-04-02
+### Fixed
+- Phone number corrected to 814-264-GROW in Gospel scene
+
+
 ## [1.4.6] - 2026-04-02
 ### Fixed
 - Easter eggs now sit in the grass correctly
