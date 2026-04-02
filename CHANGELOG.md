@@ -2,10 +2,6 @@
 
 ## [1.4.4] - 2026-04-01
 ### Changed
-- Fireworks moved to summer night only
-- Fireworks now launch upward like a rocket then burst
-- Brighter firework colors: red, green, blue, white, yellow
-### Added
 - Updated page title to Crops for Christ
 
 
