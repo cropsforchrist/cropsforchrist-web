@@ -44,10 +44,17 @@ const SEASON_COLORS = {
   },
 };
 
-type Particle = {
+type Star = {
+  x: number; y: number; r: number;
+  vx: number; vy: number;
+  a: number; baseA: number;
+  twinkleSpeed: number; twinklePhase: number;
+  c: string;
+};
+
+type ShootingStar = {
   x: number; y: number; vx: number; vy: number;
-  size: number; a: number; color: string;
-  wobble: number; wobbleSpeed: number; rotation: number;
+  len: number; a: number; active: boolean; timer: number;
 };
 
 type FireworkParticle = {
@@ -57,20 +64,20 @@ type FireworkParticle = {
 
 type Firework = {
   x: number; y: number;
-  targetY: number;
-  vy: number;
+  targetY: number; vy: number;
   phase: 'rocket' | 'burst';
   particles: FireworkParticle[];
-  color: string;
-  timer: number;
-  trailX: number[];
-  trailY: number[];
+  color: string; timer: number;
+  trailX: number[]; trailY: number[];
 };
 
-type ShootingStar = {
+type Particle = {
   x: number; y: number; vx: number; vy: number;
-  len: number; a: number; active: boolean; timer: number;
+  size: number; a: number; color: string;
+  wobble: number; wobbleSpeed: number; rotation: number;
 };
+
+const FIREWORK_COLORS = ['#ff2222', '#22ff22', '#2266ff', '#ffffff', '#ffee00'];
 
 export default function Background() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -85,14 +92,14 @@ export default function Background() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext('2d')!;
 
     let W = canvas.width  = window.innerWidth;
     let H = canvas.height = window.innerHeight;
     let animId: number;
 
-    const stars = Array.from({ length: 140 }, () => ({
+    // ── STARS ──
+    const stars: Star[] = Array.from({ length: 140 }, () => ({
       x: Math.random() * W, y: Math.random() * H,
       r: Math.random() * 1.4 + 0.3,
       vx: (Math.random() - 0.5) * 0.1,
@@ -104,9 +111,10 @@ export default function Background() {
       c: Math.random() > 0.7 ? '#D4A843' : Math.random() > 0.5 ? '#aed6f1' : '#ffffff',
     }));
 
-    const shootingStars: ShootingStar[] = [makeShootingStar(W, H, true)];
+    // ── SHOOTING STAR ──
+    const shootingStars: ShootingStar[] = [makeShootingStar(true)];
 
-    function makeShootingStar(W: number, H: number, inactive: boolean): ShootingStar {
+    function makeShootingStar(inactive: boolean): ShootingStar {
       return {
         x: Math.random() * W * 0.7,
         y: Math.random() * H * 0.4,
@@ -119,7 +127,7 @@ export default function Background() {
       };
     }
 
-    const FIREWORK_COLORS = ['#ff2222','#22ff22','#2266ff','#ffffff','#ffee00'];
+    // ── FIREWORKS ──
     const fireworks: Firework[] = [];
     let fireworkTimer = Math.random() * 200 + 150;
 
@@ -128,15 +136,12 @@ export default function Background() {
       const targetY = Math.random() * H * 0.35 + H * 0.05;
       const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
       fireworks.push({
-        x, y: H * 0.9,
-        targetY,
+        x, y: H * 0.9, targetY,
         vy: -(Math.abs(H * 0.9 - targetY)) / 35,
         phase: 'rocket',
         particles: [],
-        color,
-        timer: 80,
-        trailX: [],
-        trailY: [],
+        color, timer: 80,
+        trailX: [], trailY: [],
       });
     }
 
@@ -149,8 +154,7 @@ export default function Background() {
           x: fw.x, y: fw.y,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
-          a: 1,
-          color: fw.color,
+          a: 1, color: fw.color,
           size: Math.random() * 2.5 + 1,
         };
       });
@@ -172,7 +176,6 @@ export default function Background() {
           if (fw.trailX.length > 12) { fw.trailX.shift(); fw.trailY.shift(); }
 
           fw.trailX.forEach((tx, ti) => {
-            if (!ctx) return;
             const ta = (ti / fw.trailX.length) * 0.8;
             ctx.beginPath();
             ctx.arc(tx, fw.trailY[ti], 2, 0, Math.PI * 2);
@@ -188,15 +191,12 @@ export default function Background() {
           ctx.fill();
 
           fw.y += fw.vy;
+          if (fw.y <= fw.targetY) burstFirework(fw);
 
-          if (fw.y <= fw.targetY) {
-            burstFirework(fw);
-          }
         } else {
           fw.timer--;
           let allFaded = true;
           fw.particles.forEach(p => {
-            if (!ctx) return;
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.07;
@@ -217,29 +217,24 @@ export default function Background() {
       ctx.globalAlpha = 1;
     }
 
-    const particles: Particle[] = Array.from({ length: 60 }, () => makeParticle(W, H, 'init'));
+    // ── PARTICLES (fall leaves / winter snow) ──
+    const particles: Particle[] = Array.from({ length: 60 }, () => makeParticle('init'));
 
     function shouldShowParticles(): boolean {
       const s = seasonRef.current;
       const t = timeRef.current;
       if (t === 'night') return false;
-      if (s === 'fall') return true;
-      if (s === 'winter') return true;
-      return false;
+      return s === 'fall' || s === 'winter';
     }
 
-    function makeParticle(W: number, H: number, mode: 'init' | 'top'): Particle {
+    function makeParticle(mode: 'init' | 'top'): Particle {
       const s = seasonRef.current;
       return {
         x: Math.random() * W,
         y: mode === 'init' ? Math.random() * H : -20,
         vx: s === 'fall' ? (Math.random() - 0.5) * 1.5 : (Math.random() - 0.5) * 0.5,
-        vy: s === 'winter' ? Math.random() * 1 + 0.3
-          : s === 'fall'   ? Math.random() * 1.2 + 0.4
-          : Math.random() * 0.4 + 0.1,
-        size: s === 'winter' ? Math.random() * 4 + 2
-            : s === 'fall'   ? Math.random() * 10 + 6
-            : Math.random() * 6 + 3,
+        vy: s === 'winter' ? Math.random() * 1 + 0.3 : Math.random() * 1.2 + 0.4,
+        size: s === 'winter' ? Math.random() * 4 + 2 : Math.random() * 10 + 6,
         a: Math.random() * 0.6 + 0.3,
         color: s === 'fall'
           ? ['#ff6600','#cc3300','#ff9900','#ffcc00','#993300'][Math.floor(Math.random() * 5)]
@@ -268,7 +263,7 @@ export default function Background() {
           ctx.stroke();
           ctx.restore();
         }
-      } else if (s === 'fall') {
+      } else {
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.ellipse(0, 0, p.size / 2, p.size, 0, 0, Math.PI * 2);
@@ -277,11 +272,12 @@ export default function Background() {
       ctx.restore();
     }
 
+    // ── SHOOTING STARS ──
     function drawShootingStars() {
       shootingStars.forEach((ss, i) => {
         ss.timer--;
         if (ss.timer <= 0 && !ss.active) {
-          shootingStars[i] = { ...makeShootingStar(W, H, false), active: true, a: 0 };
+          shootingStars[i] = { ...makeShootingStar(false), active: true, a: 0 };
           return;
         }
         if (!ss.active) return;
@@ -291,12 +287,15 @@ export default function Background() {
         ss.a = Math.min(ss.a + 0.05, 0.8);
 
         if (ss.x > W || ss.y > H) {
-          shootingStars[i] = makeShootingStar(W, H, true);
+          shootingStars[i] = makeShootingStar(true);
           shootingStars[i].timer = Math.random() * 300 + 150;
           return;
         }
 
-        const grad = ctx.createLinearGradient(ss.x, ss.y, ss.x - ss.len, ss.y - ss.len * (ss.vy / ss.vx));
+        const grad = ctx.createLinearGradient(
+          ss.x, ss.y,
+          ss.x - ss.len, ss.y - ss.len * (ss.vy / ss.vx)
+        );
         grad.addColorStop(0, `rgba(255,255,255,${ss.a})`);
         grad.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.beginPath();
@@ -308,6 +307,7 @@ export default function Background() {
       });
     }
 
+    // ── MAIN DRAW LOOP ──
     function draw() {
       const s = seasonRef.current;
       const t = timeRef.current;
@@ -315,12 +315,14 @@ export default function Background() {
 
       ctx.clearRect(0, 0, W, H);
 
+      // Sky
       const grad = ctx.createLinearGradient(0, 0, 0, H);
       grad.addColorStop(0, skyColors.sky2);
       grad.addColorStop(1, skyColors.sky1);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
+      // Night elements
       if (t === 'night') {
         stars.forEach(star => {
           star.twinklePhase += star.twinkleSpeed;
@@ -336,26 +338,25 @@ export default function Background() {
         ctx.globalAlpha = 1;
         drawShootingStars();
         ctx.globalAlpha = 1;
-
-        if (s === 'summer') {
-          drawFireworks();
-        }
+        if (s === 'summer') drawFireworks();
       }
 
+      // Day particles
       if (shouldShowParticles()) {
         particles.forEach((p, i) => {
           p.wobble += p.wobbleSpeed;
           p.x += p.vx + Math.sin(p.wobble) * 0.5;
           p.y += p.vy;
           p.rotation += 0.01;
-          if (p.y > H + 20 || p.y < -30 || p.x < -30 || p.x > W + 30) {
-            particles[i] = makeParticle(W, H, 'top');
+          if (p.y > H + 20 || p.x < -30 || p.x > W + 30) {
+            particles[i] = makeParticle('top');
           }
           drawParticle(p, s);
         });
         ctx.globalAlpha = 1;
       }
 
+      // Field silhouette
       ctx.fillStyle = SEASON_COLORS[s].field;
       ctx.beginPath();
       ctx.moveTo(0, H);
@@ -372,8 +373,9 @@ export default function Background() {
     }
 
     function resize() {
-      W = canvas!.width  = window.innerWidth;
-      H = canvas!.height = window.innerHeight;
+      if (!canvas) return;
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
     }
 
     window.addEventListener('resize', resize);

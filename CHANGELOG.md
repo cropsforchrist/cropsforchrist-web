@@ -1,5 +1,14 @@
 # Changelog
 
+# [1.4.4] - 2026-04-01
+### Fixed
+- TypeScript ctx null assertion throughout Background.tsx
+- Canvas null check in resize function
+### Changed
+- Fireworks summer night only with rocket trail and burst
+- Reduced shooting stars to 1
+- Removed particles at night for all seasons except winter snowflakes
+
 ## [1.4.4] - 2026-04-01
 ### Changed
 - Updated page title to Crops for Christ
