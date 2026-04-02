@@ -67,6 +67,11 @@ type Firework = {
   trailY: number[];
 };
 
+type ShootingStar = {
+  x: number; y: number; vx: number; vy: number;
+  len: number; a: number; active: boolean; timer: number;
+};
+
 export default function Background() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [season, setSeason] = useState<Season>(getSeasonFromDate());
@@ -87,7 +92,6 @@ export default function Background() {
     let H = canvas.height = window.innerHeight;
     let animId: number;
 
-    // Stars
     const stars = Array.from({ length: 140 }, () => ({
       x: Math.random() * W, y: Math.random() * H,
       r: Math.random() * 1.4 + 0.3,
@@ -99,12 +103,6 @@ export default function Background() {
       twinklePhase: Math.random() * Math.PI * 2,
       c: Math.random() > 0.7 ? '#D4A843' : Math.random() > 0.5 ? '#aed6f1' : '#ffffff',
     }));
-
-    // Shooting star
-    type ShootingStar = {
-      x: number; y: number; vx: number; vy: number;
-      len: number; a: number; active: boolean; timer: number;
-    };
 
     const shootingStars: ShootingStar[] = [makeShootingStar(W, H, true)];
 
@@ -121,7 +119,6 @@ export default function Background() {
       };
     }
 
-    // Fireworks
     const FIREWORK_COLORS = ['#ff2222','#22ff22','#2266ff','#ffffff','#ffee00'];
     const fireworks: Firework[] = [];
     let fireworkTimer = Math.random() * 200 + 150;
@@ -174,8 +171,8 @@ export default function Background() {
           fw.trailY.push(fw.y);
           if (fw.trailX.length > 12) { fw.trailX.shift(); fw.trailY.shift(); }
 
-          // Draw trail
           fw.trailX.forEach((tx, ti) => {
+            if (!ctx) return;
             const ta = (ti / fw.trailX.length) * 0.8;
             ctx.beginPath();
             ctx.arc(tx, fw.trailY[ti], 2, 0, Math.PI * 2);
@@ -184,7 +181,6 @@ export default function Background() {
             ctx.fill();
           });
 
-          // Draw rocket head
           ctx.beginPath();
           ctx.arc(fw.x, fw.y, 3, 0, Math.PI * 2);
           ctx.fillStyle = '#ffffff';
@@ -200,6 +196,7 @@ export default function Background() {
           fw.timer--;
           let allFaded = true;
           fw.particles.forEach(p => {
+            if (!ctx) return;
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.07;
@@ -220,7 +217,6 @@ export default function Background() {
       ctx.globalAlpha = 1;
     }
 
-    // Fall / winter particles
     const particles: Particle[] = Array.from({ length: 60 }, () => makeParticle(W, H, 'init'));
 
     function shouldShowParticles(): boolean {
@@ -384,7 +380,7 @@ export default function Background() {
     draw();
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventFromListener('resize', resize);
+      window.removeEventListener('resize', resize);
     };
   }, []);
 
